@@ -81,8 +81,6 @@ def main():
         send_message(message)
 
     print("발견된 상영:", len(found))
-    print("응답 종류:", type(result))
-print("응답 키:", list(result.keys()))
 
 
 if __name__ == "__main__":
