@@ -4,11 +4,11 @@ import requests
 TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
-URL = "https://www.megabox.co.kr/on/oh/ohb/SimpleBooking/selectBokdList.do"
+URL = "https://www.megabox.co.kr/on/oh/ohc/Brch/schedulePage.do"
 
 DATE = "20261003"
 THEATER_NO = "0020"
-KEYWORD = "치이카와"
+KEYWORDS = ["치이카와", "인어 섬"]
 
 
 def send_message(text):
@@ -23,15 +23,16 @@ def send_message(text):
 
 
 def main():
-    data = {
-        "arrMovieNo": "",
-        "playDe": DATE,
-        "brchNoListCnt": "1",
+    params = {
+        "masterType": "brch",
+        "detailType": "spcl",
+        "brchNo": THEATER_NO,
         "brchNo1": THEATER_NO,
-        "areaCd1": "",
+        "firstAt": "N",
         "spclbYn1": "N",
         "theabKindCd1": "",
-        "sellChnlCd": "ONLINE"
+        "crtDe": "20260930",
+        "playDe": DATE
     }
 
     headers = {
@@ -41,7 +42,7 @@ def main():
 
     response = requests.post(
         URL,
-        data=data,
+        data=params,
         headers=headers,
         timeout=20
     )
@@ -49,26 +50,30 @@ def main():
     response.raise_for_status()
     result = response.json()
 
+    mega_map = result.get("megaMap", {})
+    schedules = mega_map.get("movieFormList", [])
+
     found = []
 
-    for area in result.get("areaBrchList", []):
-        for movie in area.get("movieList", []):
+    for item in schedules:
+        movie_name = item.get("movieNm", "")
 
-            movie_name = movie.get("movieNm", "")
+        if not any(keyword in movie_name for keyword in KEYWORDS):
+            continue
 
-            if KEYWORD not in movie_name:
-                continue
+        start = item.get("playStartTime", "")
+        end = item.get("playEndTime", "")
+        remain = item.get("restSeatCnt", "")
+        total = item.get("totSeatCnt", "")
 
-            for schedule in movie.get("movieFormList", []):
-                start = schedule.get("playStartTime", "")
-                end = schedule.get("playEndTime", "")
-                remain = schedule.get("restSeatCnt", "")
+        found.append(
+            f"🎬 {movie_name}\n"
+            f"🕐 {start} ~ {end}\n"
+            f"💺 좌석: {remain}/{total}"
+        )
 
-                found.append(
-                    f"🎬 {movie_name}\n"
-                    f"🕐 {start} ~ {end}\n"
-                    f"💺 잔여좌석: {remain}"
-                )
+    print("전체 상영:", len(schedules))
+    print("치이카와 발견:", len(found))
 
     if found:
         message = (
@@ -79,8 +84,6 @@ def main():
         )
 
         send_message(message)
-
-    print("발견된 상영:", len(found))
 
 
 if __name__ == "__main__":
