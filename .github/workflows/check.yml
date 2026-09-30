@@ -3,7 +3,7 @@ name: Megabox Chiikawa Alert
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "* * * * *"
 
 jobs:
   check:
