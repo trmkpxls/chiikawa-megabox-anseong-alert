@@ -81,6 +81,7 @@ def main():
         send_message(message)
 
     print("발견된 상영:", len(found))
+    print(result)
 
 
 if __name__ == "__main__":
